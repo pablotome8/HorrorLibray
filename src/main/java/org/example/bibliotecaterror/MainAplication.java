@@ -5,15 +5,17 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-
 public class MainAplication extends Application {
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainAplication.class.getResource("/org/example/bibliotecaterror/library-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load());
+        FXMLLoader fxmlLoader = new FXMLLoader(
+                MainAplication.class.getResource("/org/example/bibliotecaterror/library-view.fxml")
+        );
+        Scene scene = new Scene(fxmlLoader.load(), 940, 620);
+        stage.setMinWidth(780);
+        stage.setMinHeight(520);
         stage.setScene(scene);
-        stage.setTitle("Stephen King's Library");
+        stage.setTitle("Stephen King's Horror Library");
         stage.show();
-
     }
 }

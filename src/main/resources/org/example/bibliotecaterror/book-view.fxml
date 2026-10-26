@@ -1,62 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Text?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.bibliotecaterror.controller.BookViewController">
+<BorderPane prefHeight="620.0" prefWidth="940.0"
+            styleClass="app-root"
+            stylesheets="@styles.css"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.example.bibliotecaterror.controller.BookViewController">
+
+   <!-- TOP HEADER -->
    <top>
-      <GridPane BorderPane.alignment="CENTER">
-        <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-        </columnConstraints>
-        <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
-         <children>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Book Details" GridPane.columnSpan="2" GridPane.halignment="CENTER">
-               <font>
-                  <Font size="18.0" />
-               </font>
-               <GridPane.margin>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </GridPane.margin>
-            </Text>
-            <Button fx:id="buttonLibrary" mnemonicParsing="false" text="Library" GridPane.halignment="CENTER" GridPane.rowIndex="1">
-               <GridPane.margin>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-               </GridPane.margin>
-            </Button>
-            <Button fx:id="buttonFavorites" mnemonicParsing="false" text="Favorites" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
-         </children>
-      </GridPane>
+      <HBox alignment="CENTER_LEFT" spacing="16.0" styleClass="header-bar" BorderPane.alignment="CENTER">
+         <VBox spacing="4.0">
+            <Label styleClass="brand-badge" text="LITERARY DOSSIER" />
+            <Label styleClass="header-title" text="Book Edition &amp; Metadata" />
+            <Label styleClass="header-subtitle" text="Detailed bibliographic record, publication specs, and archival notes." />
+         </VBox>
+         <Region HBox.hgrow="ALWAYS" />
+         <HBox alignment="CENTER_RIGHT" spacing="10.0">
+            <Button fx:id="buttonLibrary" mnemonicParsing="false" styleClass="btn-secondary" text="← Back to Library" />
+            <Button fx:id="buttonFavorites" mnemonicParsing="false" styleClass="btn-primary" text="★ Favorites" />
+         </HBox>
+      </HBox>
    </top>
+
+   <!-- CENTER DOSSIER -->
    <center>
-      <GridPane BorderPane.alignment="CENTER">
-        <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-        </columnConstraints>
-        <rowConstraints>
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
-         <children>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Title: " GridPane.halignment="RIGHT" />
-            <Text fx:id="textTitle" strokeType="OUTSIDE" strokeWidth="0.0" text="Text" GridPane.columnIndex="1" GridPane.halignment="LEFT" />
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Year: " GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-            <Text fx:id="textYear" strokeType="OUTSIDE" strokeWidth="0.0" text="Text" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" />
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="ISBN: " GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
-            <Text fx:id="textISBN" strokeType="OUTSIDE" strokeWidth="0.0" text="Text" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="2" />
-         </children>
-      </GridPane>
+      <HBox spacing="22.0" styleClass="details-container" BorderPane.alignment="CENTER">
+
+         <!-- Left Book Spine / Cover Card -->
+         <VBox alignment="CENTER" prefWidth="270.0" spacing="14.0" styleClass="book-cover-card">
+            <Label styleClass="book-cover-icon" text="📕" />
+            <Label styleClass="book-cover-author" text="STEPHEN KING" />
+            <Label fx:id="labelCoverTitle" alignment="CENTER" styleClass="book-cover-title" text="Book Title" wrapText="true" />
+            <HBox alignment="CENTER" spacing="8.0">
+               <Label fx:id="badgeYear" styleClass="stat-badge" text="Year" />
+               <Label fx:id="badgePages" styleClass="stat-badge-accent" text="Pages" />
+            </HBox>
+            <Region VBox.vgrow="ALWAYS" />
+            <Button fx:id="buttonToggleFavorite" maxWidth="1.7976931348623157E308" mnemonicParsing="false" styleClass="btn-primary" text="★ Add to Favorites" />
+         </VBox>
+
+         <!-- Right Metadata & Notes Card -->
+         <VBox spacing="18.0" styleClass="details-card" HBox.hgrow="ALWAYS">
+            <VBox spacing="6.0">
+               <Label styleClass="meta-label" text="ORIGINAL TITLE" />
+               <Text fx:id="textTitle" fill="#f8fafc" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-size: 24px; -fx-font-weight: bold;" text="Title" />
+            </VBox>
+
+            <GridPane hgap="14.0" vgap="14.0">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="64.0" prefHeight="68.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="64.0" prefHeight="68.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <VBox spacing="4.0" styleClass="meta-box">
+                     <Label styleClass="meta-label" text="PUBLICATION YEAR" />
+                     <Text fx:id="textYear" fill="#f1f5f9" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-size: 15px; -fx-font-weight: bold;" text="-" />
+                  </VBox>
+                  <VBox spacing="4.0" styleClass="meta-box" GridPane.columnIndex="1">
+                     <Label styleClass="meta-label" text="ISBN IDENTIFIER" />
+                     <Text fx:id="textISBN" fill="#f1f5f9" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-size: 15px; -fx-font-weight: bold;" text="-" />
+                  </VBox>
+                  <VBox spacing="4.0" styleClass="meta-box" GridPane.rowIndex="1">
+                     <Label styleClass="meta-label" text="PUBLISHER" />
+                     <Text fx:id="textPublisher" fill="#f1f5f9" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-size: 15px; -fx-font-weight: bold;" text="-" />
+                  </VBox>
+                  <VBox spacing="4.0" styleClass="meta-box" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                     <Label styleClass="meta-label" text="LENGTH (PAGES)" />
+                     <Text fx:id="textPages" fill="#f1f5f9" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-size: 15px; -fx-font-weight: bold;" text="-" />
+                  </VBox>
+               </children>
+            </GridPane>
+
+            <VBox spacing="8.0" VBox.vgrow="ALWAYS">
+               <Label styleClass="meta-label" text="EDITORIAL NOTES &amp; LITERARY TRIVIA" />
+               <TextArea fx:id="textNotes" editable="false" prefHeight="140.0" styleClass="notes-area" wrapText="true" VBox.vgrow="ALWAYS" />
+            </VBox>
+         </VBox>
+
+      </HBox>
    </center>
+
+   <!-- BOTTOM BAR -->
+   <bottom>
+      <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="footer-bar" BorderPane.alignment="CENTER">
+         <Label styleClass="footer-hint" text="📚 Data sourced from the Stephen King Bibliography Archive • Changes to Favorites can be persisted to disk." />
+      </HBox>
+   </bottom>
+
 </BorderPane>

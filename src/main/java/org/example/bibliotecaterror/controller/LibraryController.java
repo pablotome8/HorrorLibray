@@ -1,5 +1,7 @@
 package org.example.bibliotecaterror.controller;
 
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -19,9 +21,12 @@ import org.example.bibliotecaterror.model.Library;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class LibraryController implements Initializable {
+
+    private static final String API_URL = "https://stephen-king-api.onrender.com/api/books";
 
     @FXML
     private Button buttonExport;
@@ -30,16 +35,37 @@ public class LibraryController implements Initializable {
     private Button buttonFavorites;
 
     @FXML
+    private Button buttonDetails;
+
+    @FXML
+    private TextField searchField;
+
+    @FXML
+    private Label labelCount;
+
+    @FXML
+    private Label labelFavCount;
+
+    @FXML
     private TableView<Book> tableBook;
 
     @FXML
-    private TableColumn<Book,Boolean> tableFavorites;
+    private TableColumn<Book, String> tableTitles;
 
     @FXML
-    private TableColumn<Book,String> tableTitles;
+    private TableColumn<Book, Integer> tableYear;
 
-    private BookRepository repository = BookRepository.getInstance();
+    @FXML
+    private TableColumn<Book, String> tablePublisher;
 
+    @FXML
+    private TableColumn<Book, Integer> tablePages;
+
+    @FXML
+    private TableColumn<Book, Boolean> tableFavorites;
+
+    private final BookRepository repository = BookRepository.getInstance();
+    private FilteredList<Book> filteredBooks;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -47,18 +73,98 @@ public class LibraryController implements Initializable {
         initGUI();
         actions();
     }
+
     private void instances() {
         if (repository.getBooks().isEmpty()) {
-            ApiController apiController = new ApiController();
-            Library library = apiController.apicall("https://stephen-king-api.onrender.com/api/books");
-            repository.getBooks().setAll(library.getData());
-            applySavedFavorites();
+            try {
+                ApiController apiController = new ApiController();
+                Library library = apiController.apicall(API_URL);
+                if (library != null && library.getData() != null) {
+                    repository.getBooks().setAll(library.getData());
+                }
+                applySavedFavorites();
+            } catch (Exception e) {
+                showError("Could not load books from the Stephen King API", e);
+            }
+        }
+
+        for (Book book : repository.getBooks()) {
+            book.favoriteProperty().addListener((obs, oldVal, newVal) -> updateCounters());
         }
     }
+
+    private void initGUI() {
+        initColumns();
+        initFavoritesColumn();
+        loadTableDataWithFilter();
+        updateCounters();
+    }
+
+    private void initColumns() {
+        tableTitles.setCellValueFactory(new PropertyValueFactory<>("title"));
+        tableYear.setCellValueFactory(new PropertyValueFactory<>("year"));
+        tablePublisher.setCellValueFactory(new PropertyValueFactory<>("publisher"));
+        tablePages.setCellValueFactory(new PropertyValueFactory<>("pages"));
+        tableFavorites.setCellValueFactory(cellData -> cellData.getValue().favoriteProperty());
+    }
+
+    private void initFavoritesColumn() {
+        tableBook.setEditable(true);
+        tableFavorites.setEditable(true);
+        tableFavorites.setCellValueFactory(cellData -> cellData.getValue().favoriteProperty());
+        tableFavorites.setCellFactory(CheckBoxTableCell.forTableColumn(tableFavorites));
+    }
+
+    private void loadTableDataWithFilter() {
+        filteredBooks = new FilteredList<>(repository.getBooks(), b -> true);
+
+        if (searchField != null) {
+            searchField.textProperty().addListener((obs, oldVal, query) -> {
+                String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+                filteredBooks.setPredicate(book -> matchesSearch(book, normalized));
+                updateCounters();
+            });
+        }
+
+        SortedList<Book> sortedBooks = new SortedList<>(filteredBooks);
+        sortedBooks.comparatorProperty().bind(tableBook.comparatorProperty());
+        tableBook.setItems(sortedBooks);
+        tableBook.setPlaceholder(new Label("No books match your current search filter."));
+    }
+
+    private boolean matchesSearch(Book book, String query) {
+        if (query.isEmpty()) {
+            return true;
+        }
+        if (book.getTitle() != null && book.getTitle().toLowerCase(Locale.ROOT).contains(query)) {
+            return true;
+        }
+        if (book.getPublisher() != null && book.getPublisher().toLowerCase(Locale.ROOT).contains(query)) {
+            return true;
+        }
+        if (book.getIsbn() != null && book.getIsbn().toLowerCase(Locale.ROOT).contains(query)) {
+            return true;
+        }
+        return book.getYear() != null && String.valueOf(book.getYear()).contains(query);
+    }
+
+    private void updateCounters() {
+        int visibleCount = filteredBooks != null ? filteredBooks.size() : repository.getBooks().size();
+        long favCount = repository.getBooks().stream().filter(Book::isFavorite).count();
+
+        if (labelCount != null) {
+            labelCount.setText(visibleCount + (visibleCount == 1 ? " Book" : " Books"));
+        }
+        if (labelFavCount != null) {
+            labelFavCount.setText("★ " + favCount + (favCount == 1 ? " Favorite" : " Favorites"));
+        }
+    }
+
     private void actions() {
         configureBookTableRowDoubleClick();
         configureFavoritesButton();
         configureExportButton();
+        configureDetailsButton();
     }
 
     private void configureBookTableRowDoubleClick() {
@@ -69,24 +175,36 @@ public class LibraryController implements Initializable {
                 if (!isPrimaryDoubleClick(event) || row.isEmpty()) {
                     return;
                 }
-
-                Book selectedBook = row.getItem();
-                openSelectedBook(selectedBook);
+                openSelectedBook(row.getItem());
             });
 
             return row;
         });
     }
 
-    private void configureFavoritesButtonDoubleClick(){
-        buttonFavorites.setOnAction(event -> openFavorites());
-    }
     private void configureFavoritesButton() {
         buttonFavorites.setOnAction(event -> openFavorites());
     }
 
     private void configureExportButton() {
         buttonExport.setOnAction(event -> saveFavorites());
+    }
+
+    private void configureDetailsButton() {
+        if (buttonDetails != null) {
+            buttonDetails.setOnAction(event -> {
+                Book selected = tableBook.getSelectionModel().getSelectedItem();
+                if (selected == null) {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("No Book Selected");
+                    alert.setHeaderText("Select a book first");
+                    alert.setContentText("Please select a book row from the table (or double-click any row) to inspect its details.");
+                    alert.showAndWait();
+                    return;
+                }
+                openSelectedBook(selected);
+            });
+        }
     }
 
     private boolean isPrimaryDoubleClick(MouseEvent event) {
@@ -104,10 +222,10 @@ public class LibraryController implements Initializable {
             controller.setBook(book);
             controller.initGUI();
 
-            Stage stage = createBookViewStage(root);
+            Stage stage = getCurrentStage();
+            stage.setTitle("Book Dossier — " + (book.getTitle() != null ? book.getTitle() : "Selected Book"));
+            stage.setScene(new Scene(root, stage.getScene().getWidth(), stage.getScene().getHeight()));
             stage.show();
-
-            closeCurrentWindow();
 
         } catch (IOException e) {
             showError("The book view couldn't be opened", e);
@@ -121,29 +239,41 @@ public class LibraryController implements Initializable {
             );
 
             Parent root = loader.load();
-
-            Stage stage = new Stage();
-            stage.setTitle("Favorite Books");
-            stage.setScene(new Scene(root));
+            Stage stage = getCurrentStage();
+            stage.setTitle("Favorite Books — Stephen King's Library");
+            stage.setScene(new Scene(root, stage.getScene().getWidth(), stage.getScene().getHeight()));
             stage.show();
-
-            closeCurrentWindow();
 
         } catch (IOException e) {
             showError("The favorites view couldn't be opened", e);
         }
     }
 
-    private Stage createBookViewStage(Parent root) {
-        Stage stage = new Stage();
-        stage.setTitle("Selected Book");
-        stage.setScene(new Scene(root));
-        return stage;
+    private Stage getCurrentStage() {
+        return (Stage) tableBook.getScene().getWindow();
     }
 
-    private void closeCurrentWindow() {
-        Stage currentStage = (Stage) tableBook.getScene().getWindow();
-        currentStage.close();
+    private void applySavedFavorites() {
+        var favoriteIds = FavoriteStorage.loadFavoriteIds();
+
+        for (Book book : repository.getBooks()) {
+            book.setFavorite(favoriteIds.contains(book.getId()));
+        }
+    }
+
+    private void saveFavorites() {
+        try {
+            FavoriteStorage.saveFavorites(repository.getBooks());
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Saved");
+            alert.setHeaderText("Favorites saved to favorites.json");
+            alert.setContentText("Your favorite books collection will be automatically restored next time.");
+            alert.showAndWait();
+
+        } catch (Exception e) {
+            showError("The favorites couldn't be saved", e);
+        }
     }
 
     private void showError(String message, Exception e) {
@@ -155,49 +285,4 @@ public class LibraryController implements Initializable {
         alert.setContentText(e.getMessage());
         alert.showAndWait();
     }
-    private void initColumns() {
-        tableTitles.setCellValueFactory(new PropertyValueFactory<>("title"));
-        tableFavorites.setCellValueFactory(cellData -> cellData.getValue().favoriteProperty());
-    }
-
-    private void initFavoritesColumn() {
-        tableBook.setEditable(true);
-        tableFavorites.setEditable(true);
-
-        tableFavorites.setCellValueFactory(cellData -> cellData.getValue().favoriteProperty());
-        tableFavorites.setCellFactory(CheckBoxTableCell.forTableColumn(tableFavorites));
-    }
-
-    private void loadTableData() {
-        tableBook.setItems(repository.getBooks());
-    }
-    private void applySavedFavorites() {
-        var favoriteIds = FavoriteStorage.loadFavoriteIds();
-
-        for (Book book : repository.getBooks()) {
-            book.setFavorite(favoriteIds.contains(book.getId()));
-        }
-    }
-    private void saveFavorites() {
-        try {
-            FavoriteStorage.saveFavorites(repository.getBooks());
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Saved");
-            alert.setHeaderText("Favorites saved correctly");
-            alert.setContentText("Your favorite books will be loaded next time.");
-            alert.showAndWait();
-
-        } catch (Exception e) {
-            showError("The favorites couldn't be saved", e);
-        }
-    }
-
-    private void initGUI() {
-            initColumns();
-            initFavoritesColumn();
-            loadTableData();
-        }
-
-    }
-
+}

@@ -7,15 +7,20 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
 import org.example.bibliotecaterror.MainAplication;
 import org.example.bibliotecaterror.model.Book;
+import org.example.bibliotecaterror.model.BookRepository;
+import org.example.bibliotecaterror.model.FavoriteStorage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 @Getter
@@ -24,8 +29,8 @@ public class BookViewController implements Initializable {
 
     private static final String LIBRARY_VIEW = "library-view.fxml";
     private static final String FAVORITES_VIEW = "favorites-view.fxml";
-    private static final String LIBRARY_TITLE = "Biblioteca Stephen King";
-    private static final String FAVORITES_TITLE = "Favorite Books";
+    private static final String LIBRARY_TITLE = "Stephen King's Horror Library";
+    private static final String FAVORITES_TITLE = "Favorite Books — Stephen King's Library";
 
     @FXML
     private Button buttonLibrary;
@@ -34,7 +39,16 @@ public class BookViewController implements Initializable {
     private Button buttonFavorites;
 
     @FXML
-    private Text textISBN;
+    private Button buttonToggleFavorite;
+
+    @FXML
+    private Label labelCoverTitle;
+
+    @FXML
+    private Label badgeYear;
+
+    @FXML
+    private Label badgePages;
 
     @FXML
     private Text textTitle;
@@ -42,7 +56,27 @@ public class BookViewController implements Initializable {
     @FXML
     private Text textYear;
 
+    @FXML
+    private Text textISBN;
+
+    @FXML
+    private Text textPublisher;
+
+    @FXML
+    private Text textPages;
+
+    @FXML
+    private TextArea textNotes;
+
     private Book book;
+
+    public Book getBook() {
+        return book;
+    }
+
+    public void setBook(Book book) {
+        this.book = book;
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -60,16 +94,79 @@ public class BookViewController implements Initializable {
     private void initActions() {
         buttonLibrary.setOnAction(event -> openLibrary());
         buttonFavorites.setOnAction(event -> openFavorites());
+
+        if (buttonToggleFavorite != null) {
+            buttonToggleFavorite.setOnAction(event -> toggleFavoriteStatus());
+        }
     }
 
     private void renderBook() {
-        textTitle.setText(safeText(book.getTitle()));
-        textISBN.setText(safeText(book.getIsbn()));
-        textYear.setText(book.getYear() != null ? String.valueOf(book.getYear()) : "");
+        String title = safeText(book.getTitle(), "Untitled Work");
+        String year = book.getYear() != null ? String.valueOf(book.getYear()) : "Unknown";
+        String isbn = safeText(book.getIsbn(), "N/A");
+        String publisher = safeText(book.getPublisher(), "Unknown Publisher");
+        String pages = book.getPages() != null ? book.getPages() + " pages" : "N/A";
+
+        textTitle.setText(title);
+        textYear.setText(year);
+        textISBN.setText(isbn);
+        if (textPublisher != null) {
+            textPublisher.setText(publisher);
+        }
+        if (textPages != null) {
+            textPages.setText(pages);
+        }
+        if (labelCoverTitle != null) {
+            labelCoverTitle.setText(title);
+        }
+        if (badgeYear != null) {
+            badgeYear.setText(year);
+        }
+        if (badgePages != null) {
+            badgePages.setText(pages);
+        }
+        if (textNotes != null) {
+            textNotes.setText(formatNotes(book.getNotes()));
+        }
+
+        updateFavoriteButtonState();
     }
 
-    private String safeText(String value) {
-        return value != null ? value : "";
+    private String formatNotes(List<String> notes) {
+        if (notes == null || notes.isEmpty()) {
+            return "No additional archival notes recorded for this edition.";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String note : notes) {
+            if (note != null && !note.isBlank()) {
+                sb.append("• ").append(note.trim()).append("\n\n");
+            }
+        }
+        return sb.length() > 0 ? sb.toString().trim() : "No additional archival notes recorded for this edition.";
+    }
+
+    private void toggleFavoriteStatus() {
+        if (book == null) {
+            return;
+        }
+        book.setFavorite(!book.isFavorite());
+        FavoriteStorage.saveFavorites(BookRepository.getInstance().getBooks());
+        updateFavoriteButtonState();
+    }
+
+    private void updateFavoriteButtonState() {
+        if (buttonToggleFavorite == null || book == null) {
+            return;
+        }
+        if (book.isFavorite()) {
+            buttonToggleFavorite.setText("★ In Your Favorites (Click to Remove)");
+        } else {
+            buttonToggleFavorite.setText("☆ Add to Favorites");
+        }
+    }
+
+    private String safeText(String value, String fallback) {
+        return (value != null && !value.isBlank()) ? value : fallback;
     }
 
     private void openLibrary() {
@@ -86,7 +183,7 @@ public class BookViewController implements Initializable {
             Stage stage = getCurrentStage(sourceButton);
             showView(stage, root, title);
         } catch (IOException e) {
-            showError("No se pudo abrir la vista: " + title, e);
+            showError("Could not open view: " + title, e);
         }
     }
 
@@ -103,7 +200,7 @@ public class BookViewController implements Initializable {
 
     private void showView(Stage stage, Parent root, String title) {
         stage.setTitle(title);
-        stage.setScene(new Scene(root));
+        stage.setScene(new Scene(root, stage.getScene().getWidth(), stage.getScene().getHeight()));
         stage.show();
     }
 

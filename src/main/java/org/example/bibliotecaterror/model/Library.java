@@ -1,9 +1,10 @@
 package org.example.bibliotecaterror.model;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import javafx.collections.ObservableList;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.util.List;
 
 @Getter
@@ -14,6 +15,11 @@ public class Library {
     @Expose
     private List<Book> data;
 
+    public List<Book> getData() {
+        return data;
+    }
+
+    public void setData(List<Book> data) {
+        this.data = data;
+    }
 }
-
-
