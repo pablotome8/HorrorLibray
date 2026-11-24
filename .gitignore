@@ -5,10 +5,17 @@ target/
 .kotlin
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+# Se ignora todo .idea/ salvo lo que conviene compartir con el equipo
+.idea/*
+!.idea/.gitignore
+!.idea/encodings.xml
+!.idea/misc.xml
+!.idea/vcs.xml
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/
+!.idea/dictionaries/
+!.idea/externalDependencies.xml
 *.iws
 *.iml
 *.ipr
